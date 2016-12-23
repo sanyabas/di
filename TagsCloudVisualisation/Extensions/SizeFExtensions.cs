@@ -6,7 +6,7 @@ namespace TagsCloudVisualisation.Extensions
     {
         public static bool IsBiggerThan(this SizeF size, SizeF other)
         {
-            return size.Width > other.Width+1 || size.Height > other.Height+1;
+            return size.Width > other.Width || size.Height > other.Height;
         }
     }
 }

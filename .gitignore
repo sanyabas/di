@@ -234,3 +234,7 @@ _Pvt_Extensions
 
 # FAKE - F# Make
 .fake/
+/TagsCloudVisualisation/PlaceWithoutIntersection_200Squares.bmp
+/TagsCloudVisualisation/hundred.bmp
+*.bmp
+/TagsCloudVisualisation/hundred.bmp

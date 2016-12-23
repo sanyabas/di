@@ -43,9 +43,9 @@ namespace TagsCloudVisualisation.Layouter
             return wordsLayout;
         }
 
-        public RectangleF PutNextRectangle(SizeF rectangleSize)
+        public Result<RectangleF> PutNextRectangle(SizeF rectangleSize)
         {
-            RectangleF result;
+            Result<RectangleF> result;
             if (wordsLayout.Count == 0 && rectangles.Count == 0)
             {
                 var delta = new PointF(rectangleSize.Width / 2, rectangleSize.Height / 2);
@@ -54,23 +54,27 @@ namespace TagsCloudVisualisation.Layouter
             }
             else
             {
-                var placingPoint = FindSuitablePoint(rectangleSize);
-                previousRadiusPoint = placingPoint;
-                result = GetProcessedRectangle(placingPoint, rectangleSize);
+                result = FindSuitablePoint(rectangleSize)
+                    .Then(point => previousRadiusPoint = point)
+                    .Then(point => GetProcessedRectangle(point, rectangleSize));
             }
-            rectangles.Add(result);
+            result.Then(rect => rectangles.Add(rect));
             return result;
         }
 
-        public void PutWords(IEnumerable<KeyValuePair<string, int>> words)
+        public Result<None> PutWords(IEnumerable<KeyValuePair<string, int>> words)
         {
+            Result<None> result = Result.Ok();
             foreach (var word in words)
             {
-                PutNextWord(word.Key, word.Value);
+                result = PutNextWord(word.Key, word.Value);
+                if (!result.IsSuccess)
+                    break;
             }
+            return result;
         }
 
-        public RectangleF PutNextWord(string word, int number)
+        public Result<None> PutNextWord(string word, int number)
         {
             if (rectangles.Count == 0)
             {
@@ -78,8 +82,9 @@ namespace TagsCloudVisualisation.Layouter
             }
             var factor = (float)(number * 1.25 / biggestFrequency);
             var currentSize = new SizeF(FirstRectangle.Width * factor, FirstRectangle.Height * factor);
-            var rectangle = PutNextRectangle(currentSize);
-            wordsLayout.Add(rectangle, word);
+            var rectangle = PutNextRectangle(currentSize)
+                .Then(rect => wordsLayout.Add(rect, word))
+                .RefineError($"Couldn't place word {word}");
             return rectangle;
         }
 
@@ -88,7 +93,7 @@ namespace TagsCloudVisualisation.Layouter
             return center;
         }
 
-        private PointF GetNextSpiralPoint(PointF previousPoint)
+        private Result<PointF> GetNextSpiralPoint(PointF previousPoint)
         {
             if (rectangles.Count == 1)
             {
@@ -102,7 +107,7 @@ namespace TagsCloudVisualisation.Layouter
                 number++;
                 result = result.RotateAround(center, BoundRotationAngle);
             }
-            return result;
+            return result.IsBehindBounds(bounds) ? Result.Fail<PointF>("Couldn't place a point") : result;
         }
 
         private PointF RotateAndIncreaseRadius(PointF previousPoint)
@@ -116,38 +121,37 @@ namespace TagsCloudVisualisation.Layouter
             return result;
         }
 
-        private RectangleF GetProcessedRectangle(PointF placingPoint, SizeF rectangleSize)
+        private Result<RectangleF> GetProcessedRectangle(PointF placingPoint, SizeF rectangleSize)
         {
-            var tempResult = new RectangleF(placingPoint, rectangleSize);
-            tempResult = ShiftToCenter(tempResult);
-            if (tempResult.IsBehindBounds(bounds))
-                tempResult = TryRotateInBounds(tempResult);
-            var result = ShiftToCenter(tempResult);
-            return result;
+            var tempRectangle = new RectangleF(placingPoint, rectangleSize);
+            var tempResult = ShiftToCenter(tempRectangle)
+                .Then(TryRotateInBounds)
+                .Then(ShiftToCenter);
+            return tempResult;
         }
 
-        private PointF FindSuitablePoint(SizeF rectangleSize)
+        private Result<PointF> FindSuitablePoint(SizeF rectangleSize)
         {
-            PointF placingPoint;
+            Result<bool> intersects;
             while (true)
             {
-                var temporaryPoint = GetNextSpiralPoint(previousRadiusPoint);
-                var tempRectangle = new RectangleF(temporaryPoint, rectangleSize);
-                var intersects = tempRectangle.IntersectsWith(rectangles);
-                placingPoint = previousRadiusPoint = temporaryPoint;
-                if (intersects)
+                intersects = GetNextSpiralPoint(previousRadiusPoint)
+                    .Then(point => previousRadiusPoint = point)
+                    .Then(point => new RectangleF(point, rectangleSize))
+                    .Then(rect => rect.IntersectsWith(rectangles));
+                if (intersects.Value && intersects.IsSuccess)
                     continue;
                 break;
             }
 
-            return placingPoint;
+            return intersects.IsSuccess ? previousRadiusPoint : Result.Fail<PointF>(intersects.Error);
         }
 
-        private RectangleF ShiftToCenter(RectangleF initialPoint)
+        private Result<RectangleF> ShiftToCenter(RectangleF initialPoint)
         {
             var shiftedByDiagonal = ShiftToCenter(initialPoint, GetShiftToCenter, rect => true);
             var shiftedByX = ShiftToCenter(shiftedByDiagonal, GetShiftToCenterByX,
-                rect => Math.Abs(rect.X - center.X) > 5);
+                rect => Math.Abs(rect.X - center.X) > 5 && Math.Abs(rect.X - center.X) < center.X);
             var shiftedByY = ShiftToCenter(shiftedByX, GetShiftToCenterByY, rect => Math.Abs(rect.Y - center.Y) > 5);
             return shiftedByY;
         }
@@ -158,7 +162,10 @@ namespace TagsCloudVisualisation.Layouter
             var shift = getShift(initial);
             var tempResult = new RectangleF(initial.Location.Add(shift), initial.Size);
             while (!tempResult.IntersectsWith(rectangles) && condition(tempResult))
+            {
+                shift = getShift(tempResult);
                 tempResult = new RectangleF(tempResult.Location.Add(shift), tempResult.Size);
+            }
             return new RectangleF(tempResult.Location.Sub(shift), tempResult.Size);
         }
 
@@ -181,7 +188,7 @@ namespace TagsCloudVisualisation.Layouter
             return new PointF(0, dy);
         }
 
-        private RectangleF TryRotateInBounds(RectangleF rectangle)
+        private Result<RectangleF> TryRotateInBounds(RectangleF rectangle)
         {
             var number = 0;
             while ((rectangle.IntersectsWith(rectangles) || rectangle.IsBehindBounds(bounds)) &&
@@ -190,7 +197,11 @@ namespace TagsCloudVisualisation.Layouter
                 number++;
                 rectangle = new RectangleF(rectangle.Location.RotateAround(center, BoundRotationAngle), rectangle.Size);
             }
-            return rectangle;
+            Result<RectangleF> result;
+            if (rectangle.IntersectsWith(rectangles) || rectangle.IsBehindBounds(bounds))
+                result = Result.Fail<RectangleF>("Couldn't place rectangke");
+            else result = rectangle.AsResult();
+            return result;
         }
     }
 }

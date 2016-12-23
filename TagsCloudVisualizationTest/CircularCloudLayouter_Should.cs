@@ -41,8 +41,8 @@ namespace TagsCloudVisualizationTest
             container.Register(Component.For<ICloudVisualizer>().ImplementedBy<WordCloudVisualizer>());
             wordPreparer = container.Resolve<IWordPreparer>();
             layouter = container.Resolve<ICLoudLayouter>();
-            visualizer = container.Resolve<ICloudVisualizer>();
-            words = wordPreparer.PrepareWords(200);
+            visualizer = container.Resolve<ICloudVisualizer>(new { fontName = "Times New Roman" });
+            words = wordPreparer.PrepareWords(50);
         }
 
         [TearDown]
@@ -64,14 +64,16 @@ namespace TagsCloudVisualizationTest
         public void PlaceInCenter_ZeroRectangle()
         {
             var rectangle = layouter.PutNextRectangle(new Size(0, 0));
-            Assert.AreEqual(rectangle.Location.X, layoutCenter.X, 1e-3);
-            Assert.AreEqual(rectangle.Location.Y, layoutCenter.Y, 1e-3);
+            rectangle.IsSuccess.Should().BeTrue();
+            Assert.AreEqual(rectangle.GetValueOrThrow().Location.X, layoutCenter.X, 1e-3);
+            Assert.AreEqual(rectangle.GetValueOrThrow().Location.Y, layoutCenter.Y, 1e-3);
         }
 
         [Test]
         public void PlaceWithoutIntersection_SeveralWords()
         {
-            layouter.PutWords(words);
+            var result = layouter.PutWords(words);
+            result.IsSuccess.Should().BeTrue();
             var path = Path.Combine(TestContext.CurrentContext.TestDirectory, "words.bmp");
             visualizer.VisualizeAndSave(layouter.GetWordLayout(), path);
         }
@@ -79,7 +81,7 @@ namespace TagsCloudVisualizationTest
         [Test]
         public void PlaceInCenter_OneRectangle()
         {
-            var rectangle = layouter.PutNextRectangle(new Size(100, 100));
+            var rectangle = layouter.PutNextRectangle(new Size(100, 100)).GetValueOrThrow();
             rectangle.Should().Match(rect => ((RectangleF)rect).IntersectsWith(new RectangleF(layoutCenter, new SizeF(0, 0))));
 
         }

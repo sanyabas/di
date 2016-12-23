@@ -6,10 +6,10 @@ namespace TagsCloudVisualisation.Visualizer
 {
     public interface ICloudVisualizer
     {
-        Bitmap Visualize(Dictionary<RectangleF, string> layout);
+        Result<Bitmap> Visualize(Dictionary<RectangleF, string> layout);
 
-        void VisualizeAndSave(Dictionary<RectangleF, string> layout, string filename);
+        Result<None> VisualizeAndSave(Dictionary<RectangleF, string> layout, string filename);
 
-        void VisualizeAndSave(IEnumerable<RectangleF> layout, string filename);
+        Result<None> VisualizeAndSave(IEnumerable<RectangleF> layout, string filename);
     }
 }

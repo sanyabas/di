@@ -8,11 +8,11 @@ namespace TagsCloudVisualisation.Layouter
         List<RectangleF> GetRectanglesLayout();
         Dictionary<RectangleF, string> GetWordLayout();
 
-        RectangleF PutNextRectangle(SizeF rectangleSize);
+        Result<RectangleF> PutNextRectangle(SizeF rectangleSize);
 
-        RectangleF PutNextWord(string word, int number);
+        Result<None> PutNextWord(string word, int number);
 
-        void PutWords(IEnumerable<KeyValuePair<string, int>> words);
+        Result<None> PutWords(IEnumerable<KeyValuePair<string, int>> words);
 
         PointF GetCenter();
     }

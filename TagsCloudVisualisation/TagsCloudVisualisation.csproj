@@ -71,6 +71,7 @@
   <ItemGroup>
     <Compile Include="CommandLineOptions.cs" />
     <Compile Include="Extensions\GraphicExtensions.cs" />
+    <Compile Include="Result.cs" />
     <Compile Include="WordPreparer\IWordPreparer.cs" />
     <Compile Include="WordPreparer\SimpleWordPreparer.cs" />
     <Compile Include="Extensions\SizeFExtensions.cs" />
