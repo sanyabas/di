@@ -10,7 +10,7 @@ using TagsCloudVisualisation.WordPreparer;
 
 namespace TagsCloudVisualisation
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {
@@ -27,7 +27,7 @@ namespace TagsCloudVisualisation
             container.Register(Component.For<ImageFormat>().Instance(ImageFormat.Png));
             var preparer = container.Resolve<IWordPreparer>();
             var layouter = container.Resolve<ICLoudLayouter>();
-            var visualizer = container.Resolve<ICloudVisualizer>();
+            var visualizer = container.Resolve<ICloudVisualizer>(new { fontName = "Times New Roman" });
             layouter.PutWords(preparer.PrepareWords(options.RectanglesNumber));
             visualizer.VisualizeAndSave(layouter.GetWordLayout(), options.OutputFileName);
         }
