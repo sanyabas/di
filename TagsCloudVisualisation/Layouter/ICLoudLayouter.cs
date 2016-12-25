@@ -3,7 +3,7 @@ using System.Drawing;
 
 namespace TagsCloudVisualisation.Layouter
 {
-    public interface ICLoudLayouter
+    public interface ICloudLayouter
     {
         List<RectangleF> GetRectanglesLayout();
         Dictionary<RectangleF, string> GetWordLayout();

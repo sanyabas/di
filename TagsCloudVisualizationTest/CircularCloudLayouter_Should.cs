@@ -9,6 +9,7 @@ using Castle.Windsor;
 using FluentAssertions;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
+using TagsCloudVisualisation;
 using TagsCloudVisualisation.Extensions;
 using TagsCloudVisualisation.Layouter;
 using TagsCloudVisualisation.Visualizer;
@@ -19,7 +20,7 @@ namespace TagsCloudVisualizationTest
     [TestFixture]
     public class CircularCloudLayouter_Should
     {
-        private ICLoudLayouter layouter;
+        private ICloudLayouter layouter;
         private ICloudVisualizer visualizer;
         private Point layoutCenter;
         private const double DensityFactor = 0.6;
@@ -31,18 +32,13 @@ namespace TagsCloudVisualizationTest
         {
             layoutCenter = new Point(400, 300);
             var path = Path.Combine(TestContext.CurrentContext.TestDirectory, "words.txt");
-            var palette = new Palette(Color.White, Color.Black, Color.Brown);
             var container = new WindsorContainer();
             container.Register(Component.For<FileInfo>().Instance(new FileInfo(path)));
-            container.Register(Component.For<Palette>().Instance(palette));
-            container.Register(Component.For<ImageFormat>().Instance(ImageFormat.Png));
-            container.Register(Component.For<IWordPreparer>().ImplementedBy<SimpleWordPreparer>());
-            container.Register(Component.For<ICLoudLayouter>().ImplementedBy<CircularCloudLayouter>());
-            container.Register(Component.For<ICloudVisualizer>().ImplementedBy<WordCloudVisualizer>());
+            container.Install(new TagsCloudVisualizationInstaller());
             wordPreparer = container.Resolve<IWordPreparer>();
-            layouter = container.Resolve<ICLoudLayouter>();
+            layouter = container.Resolve<ICloudLayouter>();
             visualizer = container.Resolve<ICloudVisualizer>(new { fontName = "Times New Roman" });
-            words = wordPreparer.PrepareWords(50);
+            words = wordPreparer.PrepareWords(50).GetValueOrThrow();
         }
 
         [TearDown]

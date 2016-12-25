@@ -6,7 +6,7 @@ using TagsCloudVisualisation.Extensions;
 
 namespace TagsCloudVisualisation.Layouter
 {
-    public class CircularCloudLayouter : ICLoudLayouter
+    public class CircularCloudLayouter : ICloudLayouter
     {
         private const float SpiralRotationAngle = (float)(-Math.PI / 10);
         private const double BoundRotationAngle = -Math.PI / 6;

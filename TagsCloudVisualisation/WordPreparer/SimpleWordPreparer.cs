@@ -13,13 +13,15 @@ namespace TagsCloudVisualisation.WordPreparer
             this.WordsFile = wordsFile;
         }
 
-        public IEnumerable<string> LoadWords(FileInfo file)
+        public Result<IEnumerable<string>> LoadWords(FileInfo file)
         {
-            var words = File.ReadAllLines(file.FullName);
+            var words =
+                Result.Of<IEnumerable<string>>(() => File.ReadAllLines(file.FullName))
+                    .RefineError("Couldn't read words from file");
             return words;
         }
 
-        public IOrderedEnumerable<KeyValuePair<string, int>> SortWords(IEnumerable<string> words)
+        public IOrderedEnumerable<KeyValuePair<string, int>> CountWordFrequency(IEnumerable<string> words)
         {
             var dictionary = new Dictionary<string, int>();
             foreach (var word in words)
@@ -32,10 +34,12 @@ namespace TagsCloudVisualisation.WordPreparer
             return dictionary.OrderByDescending(pair => pair.Value);
         }
 
-        public IOrderedEnumerable<KeyValuePair<string, int>> PrepareWords(int number)
+        public Result<IOrderedEnumerable<KeyValuePair<string, int>>> PrepareWords(int number)
         {
-            var words = LoadWords(WordsFile).Where(word => word.Length > 3).Select(word => word.ToLower());
-            return SortWords(words).Take(number).OrderByDescending(pair => pair.Value);
+            return LoadWords(WordsFile)
+                .Then(w => w.Where(word => word.Length > 3).Select(word => word.ToLower()))
+                .Then(CountWordFrequency)
+                .Then(w => w.Take(number).OrderByDescending(pair => pair.Value));
         }
     }
 }

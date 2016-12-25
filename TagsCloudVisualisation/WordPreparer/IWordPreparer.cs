@@ -6,8 +6,8 @@ namespace TagsCloudVisualisation.WordPreparer
 {
     public interface IWordPreparer
     {
-        IEnumerable<string> LoadWords(FileInfo file);
-        IOrderedEnumerable<KeyValuePair<string, int>> SortWords(IEnumerable<string> words);
-        IOrderedEnumerable<KeyValuePair<string, int>> PrepareWords(int limit);
+        Result<IEnumerable<string>> LoadWords(FileInfo file);
+        IOrderedEnumerable<KeyValuePair<string, int>> CountWordFrequency(IEnumerable<string> words);
+        Result<IOrderedEnumerable<KeyValuePair<string, int>>> PrepareWords(int limit);
     }
 }

@@ -17,7 +17,7 @@ namespace TagsCloudVisualisation.Visualizer
         private readonly int bitmapWidth;
         private readonly int bitmapHeight;
 
-        public WordCloudVisualizer(ICLoudLayouter layouter, Palette palette, ImageFormat format, string fontName)
+        public WordCloudVisualizer(ICloudLayouter layouter, Palette palette, ImageFormat format, string fontName)
         {
             this.format = format;
             this.fontName = fontName;
